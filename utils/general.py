@@ -890,3 +890,13 @@ def increment_path(path, exist_ok=True, sep=''):
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
         return f"{path}{sep}{n}"  # update path
+
+def convert_coor(xyxy, old_resolution, new_resolution): #new resolution is (h,w)
+    scale = (new_resolution[0]/old_resolution[0],new_resolution[1]/old_resolution[1]) # w,h
+    # print(f'scale is {scale}')
+    # print(f'convert from {old_resolution} to {new_resolution}')
+    xmi = int(min(xyxy[0]*scale[1],new_resolution[1]))
+    ymi = int(min(xyxy[1]*scale[0],new_resolution[0]))
+    xma = int(min(xyxy[2]*scale[1],new_resolution[1]))
+    yma = int(min(xyxy[3]*scale[0],new_resolution[0]))
+    return (xmi,ymi,xma,yma)
