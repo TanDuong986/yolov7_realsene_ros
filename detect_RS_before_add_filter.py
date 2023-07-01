@@ -1,4 +1,4 @@
-#!/home/thesisrb/Workspace/miniforge3/envs/py36tor/bin/python3
+#!/usr/bin/env python
 import argparse
 import time
 from pathlib import Path
