@@ -246,9 +246,6 @@ def detect(save_img=False):
 
         # Stream results
         # if thì stream nhé
-        
-
-            
             # if save_img: # nếu muốn save
             #     if vid_path != save_path:  # check tên hoặc tạo mới
             #         vid_path = save_path
