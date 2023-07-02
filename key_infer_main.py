@@ -91,8 +91,7 @@ def detect(save_img=False):
     old_img_w = old_img_h = imgsz
     old_img_b = 1
 
-    ### bắt đầu khác source ,  từ đoạn này sẽ config và xử lý tuần tự dữ liệu nhận được từ đọc frame (realsense, webcam, video)
-
+    # bat dau khac source, tu doan nay se config va xu ly tuan tu du lieu nhan duoc tu frame realsense
     #config camera
     cfg = pipeline.start(config)
     dev = cfg.get_device()
@@ -144,22 +143,22 @@ def detect(save_img=False):
         # depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.08), cv2.COLORMAP_JET)
         img = cv2.resize(img,(640,640))
         # Letterbox
-        img = img[np.newaxis, :, :, :] #thêm một chiều mới làm batch
+        img = img[np.newaxis, :, :, :] #add new axis to use as batch
 
         # Stack
-        img = np.stack(img, 0) # chất các batch lên nhau
+        img = np.stack(img, 0) # stack all batch
 
         # Convert
         img = img[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
-        img = np.ascontiguousarray(img) # sắp xếp các array img vào bộ nhớ liền mạch để tăng tốc
+        img = np.ascontiguousarray(img) # arrange array to accelarate
 
-        # sau đoạn này thì bắt đầu giống source, đã có ảnh chất đống, đoạn sau là infer và in kết quả vào rgb và depth
+        # same the source
         ###################################################################################
 
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
-        if img.ndimension() == 3: # đảm bảo biểu diễn theo dạng BCHW
+        if img.ndimension() == 3: # make sure arrange follow BCHW
             img = img.unsqueeze(0)
 
         # Warmup
@@ -180,13 +179,11 @@ def detect(save_img=False):
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         # t3 = time_synchronized()
 
-        # không có classify giống source
+        # not have classify like source
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
 
-            # gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # đoạn này không dùng
-            # có thể khai báo mấy folder save ở đây
             if len(det):
                 '''
                 det is matrix n*m (n is number of object detected, m is 6 )
@@ -199,7 +196,7 @@ def detect(save_img=False):
                 relu = []
                 id_arr =[]
 
-                # có thể cải tiến chỗ này thử, dùng thẳng giá trị của det, không dùng for nữa
+                # try to update this by use index of det, not use for loop
                 for *xyxy, conf, cls in reversed(det):
                     c = int(cls)  # integer class
                     label = f'{names[c]} {conf:.2f}'
@@ -243,23 +240,6 @@ def detect(save_img=False):
         # imgg = np.hstack((color_image,depth_image))
         # Print time (inference + NMS)
         # print(f'Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
-
-        # Stream results
-        # if thì stream nhé
-            # if save_img: # nếu muốn save
-            #     if vid_path != save_path:  # check tên hoặc tạo mới
-            #         vid_path = save_path
-            #         if isinstance(vid_writer, cv2.VideoWriter):
-            #             vid_writer.release()  # release previous video writer
-            #         if vid_cap:  # lấy kích thước vào FPS mong muốn từ video record
-            #             fps = vid_cap.get(cv2.CAP_PROP_FPS)
-            #             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            #             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            #         else:  # stream
-            #             fps, w, h = 30, im0.shape[1], im0.shape[0]
-            #             save_path += '.mp4'
-            #         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)) # tạo instance ghi
-            #     vid_writer.write(im0) # ghi liên tục
             
         if id_frame == 1999:
             id_frame =1000
@@ -268,8 +248,9 @@ def detect(save_img=False):
 
         # cv2.imshow("Recognition result",color_image)
         # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     pipeline.stop() 
         #     break
-        
+    pipeline.stop()  
         
 
 
