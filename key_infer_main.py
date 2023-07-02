@@ -45,7 +45,7 @@ def determine_dist(box,object_dist,frame_size=(640,480)):
     angle = (h_angle,v_angle)
     return cheat,angle
 
-def detect(save_img=False):
+def detect():
     weights, imgsz, trace = opt.weights, opt.img_size, not opt.no_trace
 
     #init rosnode######################### 
@@ -256,7 +256,8 @@ def detect(save_img=False):
 
 if __name__ == '__main__': #source, weights, view_img, save_txt, imgsz, trace
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='weight/origin_v4data_v7nm.pt', help='model.pt path(s)')
+    wp = os.path.join(path_detect,'weight/origin_v4data_v7nm.pt')
+    parser.add_argument('--weights', nargs='+', type=str, default=wp, help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.7, help='object confidence threshold')

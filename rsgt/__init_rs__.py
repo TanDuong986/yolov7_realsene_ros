@@ -3,6 +3,7 @@ import json
 import os
 
 now_path = os.path.dirname(os.path.realpath(__file__))
+
 #config camera
 jsonObj = json.load(open(os.path.join(now_path,'dep.json')))
 json_string = str(jsonObj).replace("'",'\"')
