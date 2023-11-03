@@ -18,7 +18,7 @@ from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, non_max_suppression,\
       strip_optimizer, set_logging
-from utils.plots import plot_one_box
+from utils.plots import plot_one_box,plot_all_box
 from utils.torch_utils import select_device, load_classifier, TracedModel
 
 from rsgt.__init_rs__ import *
@@ -27,6 +27,40 @@ from cv_bridge import CvBridge
 
 path_detect = os.path.dirname(os.path.realpath(__file__))
 
+
+def determine_dist(box,object_dist,frame_size=(640,480)): 
+    ''' box is tuple , object_dist is object realsense
+    xmin,ymin|xmax,ymax  / range_find distance from centroid/ number of sample
+    find range to compute distance
+    firstly use random choice point | can experiment on fixed point to robust realiability '''
+
+    HFOV,VFOV = 69.4,42.5 # horizon and verticle field of view of realsense | see detail in :https://www.intel.com/content/www/us/en/support/articles/000030385/emerging-technologies/intel-realsense-technology.html
+    # 86,57 for depth
+    centroid = [int((box[0]+box[2])/2),int((box[1]+box[3])/2)]
+    cheat = object_dist.get_distance(*centroid)
+    w2 = frame_size[1]/2 # mid of W
+    h2 = frame_size[0]/2 # mid of H
+    h_angle = round(((centroid[0] - w2) / w2) * (HFOV/2),4)
+    v_angle = round(((centroid[1] - h2) / h2) * (VFOV/2),4)
+    angle = (h_angle,v_angle)
+    return cheat,angle
+
+# def determine_dist_all(box,object_dist,frame_size=(640,480)): 
+#     ''' box is tuple , object_dist is object realsense
+#     xmin,ymin|xmax,ymax  / range_find distance from centroid/ number of sample
+#     find range to compute distance
+#     firstly use random choice point | can experiment on fixed point to robust realiability '''
+
+#     HFOV,VFOV = 69.4,42.5 # horizon and verticle field of view of realsense | see detail in :https://www.intel.com/content/www/us/en/support/articles/000030385/emerging-technologies/intel-realsense-technology.html
+#     # 86,57 for depth
+#     centroid = [int((box[0]+box[2])/2),int((box[1]+box[3])/2)]
+#     cheat = object_dist.get_distance(*centroid)
+#     w2 = frame_size[1]/2 # mid of W
+#     h2 = frame_size[0]/2 # mid of H
+#     h_angle = round(((centroid[0] - w2) / w2) * (HFOV/2),4)
+#     v_angle = round(((centroid[1] - h2) / h2) * (VFOV/2),4)
+#     angle = (h_angle,v_angle)
+#     return cheat,angle
 
 def determine_dist(box,object_dist,frame_size=(640,480)): 
     ''' box is tuple , object_dist is object realsense
@@ -54,7 +88,7 @@ def detect():
 
     # Create a publisher with topic name 'string_topic' and message type String
     pub_txt = rospy.Publisher('bbox_topic', String, queue_size=100)
-    pub_img = rospy.Publisher('rgb_topic', Image, queue_size=100)
+    #pub_img = rospy.Publisher('rgb_topic', Image, queue_size=100)
 
     ###########################################################
     bridge = CvBridge()
@@ -211,7 +245,7 @@ def detect():
                     # cv2.circle(depth_image,(int((box[2]+box[0])/2),int((box[3]+box[1])/2)),10,(0,255,0),thickness=-1)
                     # print(f'dist is {dist}')
                     # print(f'angle is {angle}')
-                    # cv2.rectangle(color_image,(box[0],box[1]),(box[2],box[3]),color=(0,0,255),thickness=2)   
+                    cv2.rectangle(color_image,(box[0],box[1]),(box[2],box[3]),color=(0,0,255),thickness=2)   
                     # column : bbox (xyxy) | dist (m) | angle  
 
                     dist_arr.append(dist)
@@ -226,17 +260,23 @@ def detect():
                 frame_trans= data.to_json(orient='records')
 
                 pub_txt.publish(frame_trans)
-                rospy.loginfo("head detected")
+                rospy.loginfo(f'{data.shape[0]} heads detected')
                 # print(frame_trans)
                 # print()
                 # rate.sleep()
                 
             else :
+                dict_rs = {header[0]:[],header[1]:[],header[2]:[],header[3]:[],header[4]:[],header[-1]:[]}
+                data = pd.DataFrame(dict_rs,columns=header)
+                frame_trans= data.to_json(orient='records')
+                pub_txt.publish(frame_trans)
                 rospy.loginfo('____ No head ! _____')
-        img_msg = bridge.cv2_to_imgmsg(color_image,encoding="bgr8")
-        img_msg.header.stamp = rospy.Time.now()
-        img_msg.header.frame_id = str(id_frame)
-        pub_img.publish(img_msg)
+
+        # img_msg = bridge.cv2_to_imgmsg(color_image,encoding="bgr8")
+        # img_msg.header.stamp = rospy.Time.now()
+        # img_msg.header.frame_id = str(id_frame)
+        # pub_img.publish(img_msg)
+
         # imgg = np.hstack((color_image,depth_image))
         # Print time (inference + NMS)
         # print(f'Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
@@ -250,6 +290,7 @@ def detect():
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     pipeline.stop() 
         #     break
+
     pipeline.stop()  
         
 

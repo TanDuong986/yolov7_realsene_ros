@@ -900,3 +900,12 @@ def convert_coor(xyxy, old_resolution, new_resolution): #new resolution is (h,w)
     xma = int(min(xyxy[2]*scale[1],new_resolution[1]))
     yma = int(min(xyxy[3]*scale[0],new_resolution[0]))
     return (xmi,ymi,xma,yma)
+    
+def convert_coor_det(det, old_resolution, new_resolution): #new resolution is (h,w)
+    scale = (new_resolution[0]/old_resolution[0],new_resolution[1]/old_resolution[1]) # w,h
+    xyxy = det[:,0:4]
+    xyxy[:,[0,2]]*= scale[1]
+    xyxy[:,[1,3]]*= scale[0]
+    # print(f'scale is {scale}')
+    # print(f'convert from {old_resolution} to {new_resolution}')
+    return xyxy

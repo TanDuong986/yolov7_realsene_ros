@@ -18,7 +18,7 @@ import yaml
 from PIL import Image, ImageDraw, ImageFont
 from scipy.signal import butter, filtfilt
 
-from utils.general import xywh2xyxy, xyxy2xywh,convert_coor
+from utils.general import xywh2xyxy, xyxy2xywh,convert_coor,convert_coor_det
 from utils.metrics import fitness
 
 # Settings
@@ -69,6 +69,20 @@ def plot_one_box(xyxy, img, color=None, label=None, line_thickness=3,draw = True
             c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
             cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
             cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
+    return box
+
+def plot_all_box(det, img,draw = False):
+    # Plots one bounding box on image img
+    boxes = convert_coor_det(det,(640,640),(img.shape[0:2]))
+
+    if draw ==True:
+        tl = round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
+        color =[random.randint(0, 255) for _ in range(3)]
+        for box in boxes:
+            c1 = box[0:2].to('cpu')
+            c2 = box[2:4].to('cpu')
+            # print(*c1,*c2)
+            cv2.rectangle(img, c1, c2, color, tl)
     return box
 
 
